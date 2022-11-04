@@ -23,7 +23,7 @@ spec:
 
   ############## AWS Provider ##############
   {{- if eq .Values.cloudProvider "aws" }}
-  storageClassName: ""
+  storageClassName: {{ .Values.storageClass }}
   capacity:
     storage: {{ .Values.nominatimApi.persistenceDisk.AWS_ElasticBlockStore_size }}
   accessModes:
