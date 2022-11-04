@@ -6,7 +6,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     cert-manager.io/cluster-issuer: {{ .Values.ingress.cluster-issuer }}
-    {{- if .Values.ingress.ingress-class -}}
+    {{- if .Values.ingress.ingress-class }}
     acme.cert-manager.io/http01-ingress-class: {{ .Values.ingress.ingress-class }}
     {{- end }}
 spec:
