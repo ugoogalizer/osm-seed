@@ -5,7 +5,10 @@ metadata:
   name: {{ template "osm-seed.fullname" . }}-ingress-web
   annotations:
     kubernetes.io/ingress.class: nginx
-    cert-manager.io/cluster-issuer: letsencrypt-prod-issuer
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer }}
+    {{- if .Values.ingress.ingressClass }}
+    acme.cert-manager.io/http01-ingress-class: {{ .Values.ingress.ingressClass }}
+    {{- end }}
 spec:
   tls:
     - hosts:
