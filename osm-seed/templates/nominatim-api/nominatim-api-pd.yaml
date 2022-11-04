@@ -60,7 +60,7 @@ spec:
   storageClassName: local-storage
   {{- else }}
   ############## Other providers ##############
-  storageClassName: ""
+  storageClassName: {{ .Values.storageClass }}
   {{- end }}
   volumeName: {{ .Release.Name }}-nominatim-pv
   accessModes:
