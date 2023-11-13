@@ -1,15 +1,15 @@
-{{- if .Values.fullHistory.enabled -}}
+{{- if .Values.monitoringReplication.enabled -}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-full-history-job
+  name: {{ .Release.Name }}-replication-monitoring-job
   labels:
     app: {{ template "osm-seed.name" . }}
-    component: full-history-job
+    component: replication-monitoring-job
     environment: {{ .Values.environment }}
     release: {{ .Release.Name }}
 spec:
-  schedule: {{ quote .Values.fullHistory.schedule }}
+  schedule: {{ quote .Values.monitoringReplication.schedule }}
   startingDeadlineSeconds: 100
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
@@ -18,18 +18,22 @@ spec:
     spec:
       template:
         spec:
+          {{- if .Values.monitoringReplication.nodeSelector.enabled }}
+          nodeSelector:
+            {{ .Values.monitoringReplication.nodeSelector.label_key }} : {{ .Values.monitoringReplication.nodeSelector.label_value }}
+          {{- end }}
           containers:
-          - name: {{ .Release.Name }}-full-history-job
-            image: {{ .Values.fullHistory.image.name }}:{{ .Values.fullHistory.image.tag }}
-            command: ['/start.sh']
-            {{- if .Values.fullHistory.resources.enabled }}   
+          - name: {{ .Release.Name }}-replication-monitoring-job
+            image: {{ .Values.monitoringReplication.image.name }}:{{ .Values.monitoringReplication.image.tag }}
+            command: ['/monitoring.py']
+            {{- if .Values.monitoringReplication.resources.enabled }}   
             resources:
               requests:
-                memory: {{ .Values.fullHistory.resources.requests.memory }}
-                cpu: {{ .Values.fullHistory.resources.requests.cpu }}
+                memory: {{ .Values.monitoringReplication.resources.requests.memory }}
+                cpu: {{ .Values.monitoringReplication.resources.requests.cpu }}
               limits:
-                memory: {{ .Values.fullHistory.resources.limits.memory }}
-                cpu: {{ .Values.fullHistory.resources.limits.cpu }}
+                memory: {{ .Values.monitoringReplication.resources.limits.memory }}
+                cpu: {{ .Values.monitoringReplication.resources.limits.cpu }}
             {{- end }}
             env:
               - name: POSTGRES_HOST
@@ -40,10 +44,14 @@ spec:
                 value: {{ quote .Values.db.env.POSTGRES_PASSWORD }}
               - name: POSTGRES_USER
                 value: {{ .Values.db.env.POSTGRES_USER }}
-              - name: OVERWRITE_FHISTORY_FILE
-                value: {{ .Values.fullHistory.env.OVERWRITE_FHISTORY_FILE | quote}}
               - name: CLOUDPROVIDER
                 value: {{ .Values.cloudProvider }}
+              - name: REPLICATION_FOLDER
+                value: replication/minute
+              - name: CREATE_MISSING_FILES
+                value: {{ .Values.monitoringReplication.env.CREATE_MISSING_FILES }}
+              - name: REPLICATION_SEQUENCE_NUMBER
+                value: {{ .Values.monitoringReplication.env.REPLICATION_SEQUENCE_NUMBER | quote}}
               # In case cloudProvider=aws
               {{- if eq .Values.cloudProvider "aws" }}
               - name: AWS_S3_BUCKET
@@ -64,14 +72,10 @@ spec:
               value: {{ .Values.AZURE_STORAGE_CONNECTION_STRING }}
             {{- end }}
               # Memory optimization for osmosis
-              {{- if .Values.fullHistory.resources.enabled }}   
+              {{- if .Values.monitoringReplication.resources.enabled }}   
               - name: MEMORY_JAVACMD_OPTIONS
-                value: {{ .Values.fullHistory.resources.requests.memory | default "2Gi" | quote}}
+                value: {{ .Values.monitoringReplication.resources.requests.memory | default "2Gi" | quote}}
               {{- end }}
           restartPolicy: OnFailure
-          {{- if .Values.fullHistory.nodeSelector.enabled }}
-          nodeSelector:
-            {{ .Values.fullHistory.nodeSelector.label_key }} : {{ .Values.fullHistory.nodeSelector.label_value }}
-          {{- end }}
       backoffLimit: 3
 {{- end }}

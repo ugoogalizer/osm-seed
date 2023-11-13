@@ -1,35 +1,34 @@
-{{- if .Values.dbBackupRestore.enabled -}}
+{{- if .Values.osmSimpleMetrics.enabled -}}
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ .Release.Name }}-db-backup-job
+  name: {{ .Release.Name }}-osm-simple-metrics-job
   labels:
     app: {{ template "osm-seed.name" . }}
-    component: db-backup-job
+    component: osm-simple-metrics-job
     environment: {{ .Values.environment }}
     release: {{ .Release.Name }}
 spec:
-  schedule: {{ quote .Values.dbBackupRestore.schedule }}
+  schedule: {{ quote .Values.osmSimpleMetrics.schedule }}
+  startingDeadlineSeconds: 100
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
-  startingDeadlineSeconds: 100
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: {{ .Release.Name }}-db-backup-job
-            image: {{ .Values.dbBackupRestore.image.name }}:{{ .Values.dbBackupRestore.image.tag }}
-            command: ['/start.sh']
-            {{- if .Values.dbBackupRestore.resources.enabled }}
+          - name: {{ .Release.Name }}-osm-simple-metrics-job
+            image: {{ .Values.osmSimpleMetrics.image.name }}:{{ .Values.osmSimpleMetrics.image.tag }}
+            {{- if .Values.osmSimpleMetrics.resources.enabled }}
             resources:
               requests:
-                memory: {{ .Values.dbBackupRestore.resources.requests.memory }}
-                cpu: {{ .Values.dbBackupRestore.resources.requests.cpu }}
+                memory: {{ .Values.osmSimpleMetrics.resources.requests.memory }}
+                cpu: {{ .Values.osmSimpleMetrics.resources.requests.cpu }}
               limits:
-                memory: {{ .Values.dbBackupRestore.resources.limits.memory }}
-                cpu: {{ .Values.dbBackupRestore.resources.limits.cpu }}
+                memory: {{ .Values.osmSimpleMetrics.resources.limits.memory }}
+                cpu: {{ .Values.osmSimpleMetrics.resources.limits.cpu }}
             {{- end }}
             env:
               - name: POSTGRES_HOST
@@ -40,18 +39,12 @@ spec:
                 value: {{ quote .Values.db.env.POSTGRES_PASSWORD }}
               - name: POSTGRES_USER
                 value: {{ .Values.db.env.POSTGRES_USER }}
-              - name: DB_ACTION
-                value: {{ .Values.dbBackupRestore.env.DB_ACTION }}
-              - name: RESTORE_URL_FILE
-                value: {{.Values.dbBackupRestore.env.RESTORE_URL_FILE}}
-              - name: CLEAN_BACKUPS
-                value: {{ quote .Values.dbBackupRestore.env.CLEAN_BACKUPS }}
               - name: CLOUDPROVIDER
                 value: {{ .Values.cloudProvider }}
               # In case cloudProvider=aws
               {{- if eq .Values.cloudProvider "aws" }}
               - name: AWS_S3_BUCKET
-                value: {{ .Values.dbBackupRestore.env.AWS_S3_BUCKET }}
+                value: {{ .Values.AWS_S3_BUCKET }}
               {{- end }}
               # In case cloudProvider=gcp
               {{- if eq .Values.cloudProvider "gcp" }}
@@ -68,8 +61,8 @@ spec:
                 value: {{ .Values.AZURE_STORAGE_CONNECTION_STRING }}
               {{- end }}
           restartPolicy: OnFailure
-          {{- if .Values.dbBackupRestore.nodeSelector.enabled }}
+          {{- if .Values.osmSimpleMetrics.nodeSelector.enabled }}
           nodeSelector:
-            {{ .Values.dbBackupRestore.nodeSelector.label_key }} : {{ .Values.dbBackupRestore.nodeSelector.label_value }}
+            {{ .Values.osmSimpleMetrics.nodeSelector.label_key }}: {{ .Values.osmSimpleMetrics.nodeSelector.label_value }}
           {{- end }}
 {{- end }}
